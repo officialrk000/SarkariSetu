@@ -8,6 +8,7 @@ import CategoryCards from './components/CategoryCards';
 import JobFeed from './components/JobFeed';
 import SecondarySections from './components/SecondarySections';
 import JobDetailPage from './components/JobDetailPage';
+import LoginPage from './components/LoginPage';
 import Footer from './components/Footer';
 import { Job } from './types';
 
@@ -199,6 +200,7 @@ export default function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/auth" element={<LoginPage />} />
         <Route path="/post/:category/:id" element={<JobDetailPage />} />
       </Routes>
     </Router>
