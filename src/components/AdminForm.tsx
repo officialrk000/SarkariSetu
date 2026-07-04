@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Save, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { APPS_SCRIPT_URL } from '../lib/config';
 
 interface AdminFormData {
   formType: string;
@@ -46,9 +46,9 @@ export default function AdminForm() {
 
     try {
       const adminSession = JSON.parse(localStorage.getItem('admin_session') || '{}');
-      const scriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL;
+      const scriptUrl = APPS_SCRIPT_URL;
       
-      if (!scriptUrl || scriptUrl.includes('YOUR_APPS_SCRIPT')) {
+      if (!scriptUrl || scriptUrl.length < 10) {
         throw new Error('Apps Script URL not configured');
       }
 

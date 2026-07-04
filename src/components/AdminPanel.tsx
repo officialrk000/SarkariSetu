@@ -6,6 +6,7 @@ import {
   RefreshCcw, FileText, CheckCircle2
 } from 'lucide-react';
 import AdminForm from './AdminForm';
+import { APPS_SCRIPT_URL } from '../lib/config';
 
 interface AdminPanelProps {
   onClose: () => void;
@@ -20,7 +21,7 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const scriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL;
+      const scriptUrl = APPS_SCRIPT_URL;
       const response = await fetch(scriptUrl, {
         method: 'POST',
         body: JSON.stringify({ action: 'getStats' })

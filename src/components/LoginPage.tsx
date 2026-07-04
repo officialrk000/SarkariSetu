@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Shield, Loader2, Phone, Lock, LogIn } from 'lucide-react';
 import AdminPanel from './AdminPanel';
+import { APPS_SCRIPT_URL } from '../lib/config';
 
 export default function LoginPage() {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
@@ -32,9 +33,9 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const scriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL;
-      if (!scriptUrl || scriptUrl.includes('YOUR_APPS_SCRIPT')) {
-        throw new Error('Apps Script URL is not configured. Please add it in the Settings > Secrets menu.');
+      const scriptUrl = APPS_SCRIPT_URL;
+      if (!scriptUrl || scriptUrl.length < 10) {
+        throw new Error('Apps Script URL is not configured. Please add it in Settings > Secrets menu.');
       }
 
       const response = await fetch(scriptUrl, {
