@@ -47,6 +47,11 @@ export default function AdminForm() {
     try {
       const adminSession = JSON.parse(localStorage.getItem('admin_session') || '{}');
       const scriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL;
+      
+      if (!scriptUrl || scriptUrl.includes('YOUR_APPS_SCRIPT')) {
+        throw new Error('Apps Script URL not configured');
+      }
+
       const response = await fetch(scriptUrl, {
         method: 'POST',
         body: JSON.stringify({

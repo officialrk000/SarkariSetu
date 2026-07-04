@@ -33,8 +33,8 @@ export default function LoginPage() {
 
     try {
       const scriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL;
-      if (!scriptUrl || scriptUrl === 'https://script.google.com/macros/s/AKfycbzmy_kjTZjsjYaif7xT405HLCOhtgMm4PrOJTBWwekhM4NjX1hvguHB7EyogL97QWCR/exec') {
-        throw new Error('Apps Script URL is not configured. Please add VITE_APPS_SCRIPT_URL to your environment variables.');
+      if (!scriptUrl || scriptUrl.includes('https://script.google.com/macros/s/AKfycbzmy_kjTZjsjYaif7xT405HLCOhtgMm4PrOJTBWwekhM4NjX1hvguHB7EyogL97QWCR/exec')) {
+        throw new Error('Apps Script URL is not configured. Please add it in the Settings > Secrets menu.');
       }
 
       const response = await fetch(scriptUrl, {
