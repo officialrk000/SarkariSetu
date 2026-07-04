@@ -1,70 +1,74 @@
 import React from 'react';
-import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '../lib/firebase';
 import { motion } from 'motion/react';
-import { LogIn, Shield, Loader2 } from 'lucide-react';
+import { Shield, Loader2, Phone, Lock, LogIn } from 'lucide-react';
 import AdminPanel from './AdminPanel';
 
 export default function LoginPage() {
-  const [user, setUser] = React.useState<User | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [adminName, setAdminName] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  
+  const [mobile, setMobile] = React.useState('');
+  const [password, setPassword] = React.useState('');
 
+  // Check session on load
   React.useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-    return () => unsubscribe();
+    const savedAdmin = localStorage.getItem('admin_session');
+    if (savedAdmin) {
+      try {
+        const data = JSON.parse(savedAdmin);
+        setIsLoggedIn(true);
+        setAdminName(data.name);
+      } catch (e) {
+        localStorage.removeItem('admin_session');
+      }
+    }
   }, []);
 
-  const handleLogin = async () => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     setError(null);
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const email = result.user.email;
 
-      // Verify authorization via Apps Script
+    try {
       const scriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL;
-      if (!scriptUrl) {
-        throw new Error('Apps Script URL not configured. Please add VITE_APPS_SCRIPT_URL to your environment.');
+      if (!scriptUrl || scriptUrl === 'YOUR_APPS_SCRIPT_WEB_APP_URL') {
+        throw new Error('Apps Script URL is not configured. Please add VITE_APPS_SCRIPT_URL to your environment variables.');
       }
 
       const response = await fetch(scriptUrl, {
         method: 'POST',
         body: JSON.stringify({
-          action: 'checkAuth',
-          data: { email }
+          action: 'login',
+          data: { mobile, password }
         })
       });
       
-      const authResult = await response.json();
+      const result = await response.json();
       
-      if (!authResult.authorized) {
-        await auth.signOut();
-        throw new Error('Access denied. This account is not in the authorized list.');
+      if (result.success) {
+        localStorage.setItem('admin_session', JSON.stringify({ name: result.name, mobile }));
+        setAdminName(result.name);
+        setIsLoggedIn(true);
+      } else {
+        throw new Error(result.message || 'Invalid Mobile Number or Password');
       }
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.message || 'Failed to login');
-      await auth.signOut();
+      setError(err.message || 'Login failed');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-      </div>
-    );
-  }
+  const handleLogout = () => {
+    localStorage.removeItem('admin_session');
+    setIsLoggedIn(false);
+  };
 
-  if (user) {
-    return <AdminPanel onClose={() => auth.signOut()} />;
+  if (isLoggedIn) {
+    return <AdminPanel onClose={handleLogout} />;
   }
 
   return (
@@ -72,33 +76,66 @@ export default function LoginPage() {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-100 p-8 text-center"
+        className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl shadow-blue-900/10 border border-gray-100 p-10 text-center"
       >
-        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+        <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-200">
           <Shield className="w-8 h-8" />
         </div>
         
-        <h1 className="text-2xl font-black text-gray-900 mb-2">Admin Access</h1>
-        <p className="text-gray-500 mb-8 font-medium">Please sign in with your authorized Google account to access the admin panel.</p>
+        <h1 className="text-xl font-black text-gray-900 mb-1">Admin Login</h1>
+        <p className="text-sm text-gray-500 mb-8 font-bold">Sign in with your credentials</p>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100">
+          <div className="mb-6 p-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold border border-red-100 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
             {error}
           </div>
         )}
 
-        <button
-          onClick={handleLogin}
-          className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-100 hover:border-blue-100 hover:bg-blue-50 text-gray-700 font-bold py-4 rounded-2xl transition-all group"
-        >
-          <LogIn className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-          Sign in with Google
-        </button>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+              <Phone className="w-4 h-4 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
+            </div>
+            <input
+              type="tel"
+              required
+              placeholder="Mobile Number"
+              value={mobile}
+              onChange={(e) => setMobile(e.target.value)}
+              className="w-full pl-12 pr-6 py-3.5 bg-gray-50 border-2 border-transparent rounded-xl outline-none focus:bg-white focus:border-blue-600 transition-all font-bold text-sm text-gray-900 placeholder:text-gray-300"
+            />
+          </div>
 
-        <div className="mt-8 pt-8 border-t border-gray-100">
-          <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Authorized Personnel Only</p>
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+              <Lock className="w-4 h-4 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
+            </div>
+            <input
+              type="password"
+              required
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full pl-12 pr-6 py-3.5 bg-gray-50 border-2 border-transparent rounded-xl outline-none focus:bg-white focus:border-blue-600 transition-all font-bold text-sm text-gray-900 placeholder:text-gray-300"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-black py-4 rounded-xl transition-all shadow-xl shadow-blue-200 active:scale-95 mt-2 text-sm"
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
+            {loading ? 'Authenticating...' : 'Sign In Now'}
+          </button>
+        </form>
+
+        <div className="mt-10 pt-8 border-t border-gray-50">
+          <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em]">Authorized Personnel Only</p>
         </div>
       </motion.div>
     </div>
   );
 }
+
