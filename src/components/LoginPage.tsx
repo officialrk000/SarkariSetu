@@ -23,10 +23,33 @@ export default function LoginPage() {
     setError(null);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const email = result.user.email;
+
+      // Verify authorization via Apps Script
+      const scriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL;
+      if (!scriptUrl) {
+        throw new Error('Apps Script URL not configured. Please add VITE_APPS_SCRIPT_URL to your environment.');
+      }
+
+      const response = await fetch(scriptUrl, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'checkAuth',
+          data: { email }
+        })
+      });
+      
+      const authResult = await response.json();
+      
+      if (!authResult.authorized) {
+        await auth.signOut();
+        throw new Error('Access denied. This account is not in the authorized list.');
+      }
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.message || 'Failed to login');
+      await auth.signOut();
     } finally {
       setLoading(false);
     }

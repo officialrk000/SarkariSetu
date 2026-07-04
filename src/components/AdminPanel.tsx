@@ -1,293 +1,160 @@
 import React from 'react';
-import { supabase } from '../lib/supabase';
-import { ImagePlus, Send, X, Loader2 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Plus, Settings, LogOut, LayoutDashboard, 
+  Database, Bell, Menu, Shield, Users
+} from 'lucide-react';
+import AdminForm from './AdminForm';
 
-export default function AdminPanel({ onClose }: { onClose: () => void }) {
-  const [loading, setLoading] = React.useState(false);
-  const [image, setImage] = React.useState<File | null>(null);
-  const [preview, setPreview] = React.useState<string | null>(null);
+interface AdminPanelProps {
+  onClose: () => void;
+}
 
-  const [formData, setFormData] = React.useState({
-    title: '',
-    organization: '',
-    deadline: '',
-    officialLink: '',
-    category: 'Latest Job',
-    description: '',
-    table: 'jobs',
-    // New fields
-    application_fees: '',
-    age_limit: '',
-    notification_link: '',
-    official_website: '',
-    how_to_fill: ''
-  });
-
-  const categoryMap: Record<string, string> = {
-    'Latest Job': 'jobs',
-    'Admit Card': 'admit_cards',
-    'Result': 'results',
-    'Admission': 'admissions',
-    'Answer Key': 'answer_keys',
-    'Syllabus': 'jobs', // Fallback
-    'Scholarship': 'jobs', // Fallback
-    'Important Update': 'jobs' // Fallback
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setImage(file);
-      setPreview(URL.createObjectURL(file));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      let imageUrl = '';
-      if (image) {
-        const fileExt = image.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `jobs/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('job-images')
-          .upload(filePath, image);
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        const { data } = supabase.storage
-          .from('job-images')
-          .getPublicUrl(filePath);
-        
-        imageUrl = data.publicUrl;
-      }
-
-      const { error } = await supabase
-        .from(formData.table)
-        .insert([
-          {
-            // Map UI fields to SQL snake_case columns
-            post_name: formData.title,
-            department: formData.organization,
-            important_dates: formData.deadline,
-            apply_link: formData.officialLink,
-            application_fees: formData.application_fees,
-            age_limit: formData.age_limit,
-            notification_link: formData.notification_link,
-            official_website: formData.official_website,
-            how_to_fill: formData.how_to_fill,
-            image_url: imageUrl,
-            created_at: new Date().toISOString()
-          }
-        ]);
-
-      if (error) throw error;
-
-      alert('Item posted successfully!');
-      onClose();
-    } catch (error: any) {
-      console.error('Error posting item:', error.message || error);
-      alert(`Failed to post item: ${error.message || 'Unknown error'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+export default function AdminPanel({ onClose }: AdminPanelProps) {
+  const [activeTab, setActiveTab] = React.useState('new_post');
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-      <motion.div 
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
-      >
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-          <h2 className="text-xl font-bold text-gray-900">Post New Job Notification</h2>
-          <button onClick={onClose} className="p-2 hover:bg-white rounded-full transition-colors">
-            <X className="w-6 h-6 text-gray-400" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto">
-          {/* Image Upload */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">Official Notification Picture / Poster</label>
-            <div className="relative h-48 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center overflow-hidden group">
-              {preview ? (
-                <>
-                  <img src={preview} alt="Preview" className="w-full h-full object-contain p-2" />
-                  <button 
-                    type="button"
-                    onClick={() => { setImage(null); setPreview(null); }}
-                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </>
-              ) : (
-                <>
-                  <ImagePlus className="w-10 h-10 text-gray-300 mb-2" />
-                  <p className="text-xs text-gray-500">Click to upload image</p>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleImageChange}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                  />
-                </>
-              )}
+    <div className="min-h-screen bg-[#f8fafc] flex">
+      {/* Sidebar */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-100 transition-transform duration-300 lg:translate-x-0 lg:static
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="h-full flex flex-col p-6">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+              <Shield className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-gray-900 leading-tight">Admin Console</h2>
+              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Sarkari Setu</p>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700">Post Title</label>
-              <input 
-                required
-                className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
-                placeholder="e.g. SSC CGL 2024"
-                value={formData.title}
-                onChange={e => setFormData({...formData, title: e.target.value})}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700">Department / Organization</label>
-              <input 
-                required
-                className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
-                placeholder="e.g. Staff Selection Commission"
-                value={formData.organization}
-                onChange={e => setFormData({...formData, organization: e.target.value})}
-              />
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700">Last Date to Apply</label>
-              <input 
-                required
-                type="date"
-                className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
-                value={formData.deadline}
-                onChange={e => setFormData({...formData, deadline: e.target.value})}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700">Category</label>
-              <select 
-                className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
-                value={formData.category}
-                onChange={e => setFormData({
-                  ...formData, 
-                  category: e.target.value,
-                  table: categoryMap[e.target.value] || 'jobs'
-                })}
-              >
-                <option>Latest Job</option>
-                <option>Admit Card</option>
-                <option>Result</option>
-                <option>Syllabus</option>
-                <option>Answer Key</option>
-                <option>Admission</option>
-                <option>Scholarship</option>
-                <option>Important Update</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700">Application Fees</label>
-              <input 
-                className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
-                placeholder="e.g. Gen/OBC: 100, SC/ST: 0"
-                value={formData.application_fees}
-                onChange={e => setFormData({...formData, application_fees: e.target.value})}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700">Age Limit</label>
-              <input 
-                className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
-                placeholder="e.g. 18-27 years"
-                value={formData.age_limit}
-                onChange={e => setFormData({...formData, age_limit: e.target.value})}
-              />
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700">Notification Link</label>
-              <input 
-                type="url"
-                className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
-                placeholder="https://..."
-                value={formData.notification_link}
-                onChange={e => setFormData({...formData, notification_link: e.target.value})}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700">Official Website</label>
-              <input 
-                type="url"
-                className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
-                placeholder="https://..."
-                value={formData.official_website}
-                onChange={e => setFormData({...formData, official_website: e.target.value})}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-700">How to Fill (Short Instructions)</label>
-            <textarea 
-              className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
-              placeholder="Enter brief instructions..."
-              rows={3}
-              value={formData.how_to_fill}
-              onChange={e => setFormData({...formData, how_to_fill: e.target.value})}
+          <nav className="flex-1 space-y-2">
+            <NavItem 
+              active={activeTab === 'new_post'} 
+              onClick={() => setActiveTab('new_post')} 
+              icon={Plus} 
+              label="New Sheet Entry" 
             />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-700">Apply Link (Direct)</label>
-            <input 
-              required
-              type="url"
-              className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
-              placeholder="https://..."
-              value={formData.officialLink}
-              onChange={e => setFormData({...formData, officialLink: e.target.value})}
+            <NavItem 
+              active={activeTab === 'dashboard'} 
+              onClick={() => setActiveTab('dashboard')} 
+              icon={LayoutDashboard} 
+              label="Dashboard" 
             />
-          </div>
+            <NavItem 
+              active={activeTab === 'posts'} 
+              onClick={() => setActiveTab('posts')} 
+              icon={Database} 
+              label="Manage Data" 
+            />
+            <NavItem 
+              active={activeTab === 'notifications'} 
+              onClick={() => setActiveTab('notifications')} 
+              icon={Bell} 
+              label="Push Notifications" 
+            />
+            <NavItem 
+              active={activeTab === 'users'} 
+              onClick={() => setActiveTab('users')} 
+              icon={Users} 
+              label="Admin List" 
+            />
+          </nav>
 
-          <div className="pt-4 border-t border-gray-100 flex gap-4">
+          <div className="pt-6 border-t border-gray-100">
             <button 
-              type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 rounded-xl border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center gap-3 p-4 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-600 font-bold transition-all"
             >
-              Cancel
-            </button>
-            <button 
-              type="submit"
-              disabled={loading}
-              className="flex-2 bg-blue-600 text-white px-8 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-              Publish Notification
+              <LogOut className="w-5 h-5" />
+              Sign Out
             </button>
           </div>
-        </form>
-      </motion.div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 h-screen overflow-y-auto">
+        {/* Header */}
+        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 hover:bg-gray-100 rounded-xl transition-colors"
+            >
+              <Menu className="w-6 h-6 text-gray-600" />
+            </button>
+            <h1 className="text-xl font-black text-gray-900">
+              {activeTab === 'new_post' ? 'Create New Entry' : activeTab.replace('_', ' ').toUpperCase()}
+            </h1>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="hidden md:block text-right">
+              <p className="text-sm font-black text-gray-900">Administrator</p>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Master Access</p>
+            </div>
+            <div className="w-10 h-10 bg-gray-100 rounded-full border-2 border-white shadow-sm flex items-center justify-center">
+              <Shield className="w-5 h-5 text-gray-400" />
+            </div>
+          </div>
+        </header>
+
+        <div className="p-6 md:p-10 max-w-5xl">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              {activeTab === 'new_post' ? (
+                <div className="bg-white rounded-[2rem] shadow-xl shadow-blue-900/5 p-8 border border-gray-100">
+                  <div className="mb-8">
+                    <h2 className="text-2xl font-black text-gray-900">Entry Form</h2>
+                    <p className="text-gray-500 font-medium">Add a new record to the "data" sheet in your linked Google Spreadsheet.</p>
+                  </div>
+                  <AdminForm />
+                </div>
+              ) : (
+                <div className="bg-white rounded-3xl p-20 text-center border border-gray-100">
+                  <Settings className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+                  <h2 className="text-xl font-black text-gray-400">Module Coming Soon</h2>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </main>
+
+      {/* Overlay for mobile sidebar */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
     </div>
+  );
+}
+
+function NavItem({ active, onClick, icon: Icon, label }: { active: boolean, onClick: () => void, icon: any, label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        w-full flex items-center gap-3 p-4 rounded-2xl font-bold transition-all
+        ${active 
+          ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' 
+          : 'text-gray-500 hover:bg-gray-50 hover:text-blue-600'}
+      `}
+    >
+      <Icon className="w-5 h-5" />
+      {label}
+    </button>
   );
 }
