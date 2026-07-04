@@ -74,28 +74,28 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] p-4">
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl shadow-blue-900/10 border border-gray-100 p-10 text-center"
+        className="w-full max-w-xs bg-white rounded-[2rem] shadow-2xl shadow-blue-900/10 border border-gray-100 p-8 text-center"
       >
-        <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-200">
-          <Shield className="w-8 h-8" />
+        <div className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-100">
+          <Shield className="w-6 h-6" />
         </div>
         
-        <h1 className="text-xl font-black text-gray-900 mb-1">Admin Login</h1>
-        <p className="text-sm text-gray-500 mb-8 font-bold">Sign in with your credentials</p>
+        <h1 className="text-lg font-black text-gray-900 mb-0.5">Admin Login</h1>
+        <p className="text-[10px] text-gray-400 mb-6 font-black uppercase tracking-widest">Sign in to continue</p>
 
         {error && (
-          <div className="mb-6 p-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold border border-red-100 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+          <div className="mb-4 p-2.5 bg-red-50 text-red-600 rounded-lg text-[10px] font-bold border border-red-100 flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse flex-shrink-0" />
             {error}
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-3">
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-              <Phone className="w-4 h-4 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Phone className="w-3.5 h-3.5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
             </div>
             <input
               type="tel"
@@ -103,13 +103,13 @@ export default function LoginPage() {
               placeholder="Mobile Number"
               value={mobile}
               onChange={(e) => setMobile(e.target.value)}
-              className="w-full pl-12 pr-6 py-3.5 bg-gray-50 border-2 border-transparent rounded-xl outline-none focus:bg-white focus:border-blue-600 transition-all font-bold text-sm text-gray-900 placeholder:text-gray-300"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-2 border-transparent rounded-xl outline-none focus:bg-white focus:border-blue-600 transition-all font-bold text-xs text-gray-900 placeholder:text-gray-300"
             />
           </div>
 
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-              <Lock className="w-4 h-4 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Lock className="w-3.5 h-3.5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
             </div>
             <input
               type="password"
@@ -117,17 +117,17 @@ export default function LoginPage() {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-12 pr-6 py-3.5 bg-gray-50 border-2 border-transparent rounded-xl outline-none focus:bg-white focus:border-blue-600 transition-all font-bold text-sm text-gray-900 placeholder:text-gray-300"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-2 border-transparent rounded-xl outline-none focus:bg-white focus:border-blue-600 transition-all font-bold text-xs text-gray-900 placeholder:text-gray-300"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-black py-4 rounded-xl transition-all shadow-xl shadow-blue-200 active:scale-95 mt-2 text-sm"
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-black py-3 rounded-xl transition-all shadow-lg shadow-blue-100 active:scale-95 mt-1 text-xs"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
-            {loading ? 'Authenticating...' : 'Sign In Now'}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+            {loading ? 'Wait...' : 'Login'}
           </button>
         </form>
 

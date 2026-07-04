@@ -45,12 +45,17 @@ export default function AdminForm() {
     setStatus('idle');
 
     try {
+      const adminSession = JSON.parse(localStorage.getItem('admin_session') || '{}');
       const scriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL;
       const response = await fetch(scriptUrl, {
         method: 'POST',
         body: JSON.stringify({
           action: 'submitData',
-          data: formData
+          data: { 
+            ...formData, 
+            submittedBy: adminSession.name || 'Unknown',
+            timestamp: new Date().toISOString()
+          }
         })
       });
 
@@ -70,15 +75,15 @@ export default function AdminForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Form Type / Category */}
-        <div className="space-y-2">
-          <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Form Type</label>
+        <div className="space-y-1">
+          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Form Type</label>
           <select 
             value={formData.formType}
             onChange={e => setFormData({...formData, formType: e.target.value})}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
           >
             {['Latest Job', 'Admit Card', 'Result', 'Admission', 'Answer Key', 'Syllabus', 'Scholarship', 'Important Update'].map(cat => (
               <option key={cat} value={cat}>{cat}</option>
@@ -160,26 +165,26 @@ export default function AdminForm() {
         </div>
       </div>
 
-      <div className="pt-6 flex items-center justify-end gap-4">
+      <div className="pt-4 flex items-center justify-end gap-3">
         {status === 'success' && (
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
-            <CheckCircle2 className="w-5 h-5" />
-            Data Saved to Sheet!
+          <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-1.5 text-emerald-600 font-bold text-[10px]">
+            <CheckCircle2 className="w-4 h-4" />
+            Saved!
           </motion.div>
         )}
         {status === 'error' && (
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-red-600 font-bold text-sm">
-            <AlertCircle className="w-5 h-5" />
-            Failed to save. Check Console.
+          <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-1.5 text-red-600 font-bold text-[10px]">
+            <AlertCircle className="w-4 h-4" />
+            Error!
           </motion.div>
         )}
         <button
           type="submit"
           disabled={submitting}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-blue-200 transition-all active:scale-95"
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-black px-6 py-3 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95 text-xs"
         >
-          {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-          {submitting ? 'Submitting...' : 'Save Data to Sheet'}
+          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {submitting ? 'Saving...' : 'Export to Sheet'}
         </button>
       </div>
     </form>
@@ -187,27 +192,27 @@ export default function AdminForm() {
 }
 
 const InputField = ({ label, value, onChange, placeholder }: { label: string, value: string, onChange: (v: string) => void, placeholder?: string }) => (
-  <div className="space-y-2">
-    <label className="text-xs font-black text-gray-400 uppercase tracking-widest">{label}</label>
+  <div className="space-y-1">
+    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</label>
     <input 
       type="text"
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-300"
+      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-300"
     />
   </div>
 );
 
 const TextAreaField = ({ label, value, onChange, placeholder }: { label: string, value: string, onChange: (v: string) => void, placeholder?: string }) => (
-  <div className="space-y-2">
-    <label className="text-xs font-black text-gray-400 uppercase tracking-widest">{label}</label>
+  <div className="space-y-1">
+    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</label>
     <textarea 
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      rows={3}
-      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-300 resize-none"
+      rows={2}
+      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-300 resize-none"
     />
   </div>
 );
